@@ -6,6 +6,18 @@
 'use strict';
 
 // ========================================
+// ユーティリティ: debounce（連続呼び出しを間引く）
+// スライダー操作時のフィルター適用遅延に使用
+// ========================================
+function debounce(fn, delay) {
+  let timer = null;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// ========================================
 // グローバル状態管理
 // ========================================
 const State = {
@@ -53,6 +65,7 @@ function init() {
   setupLayerPanel();
   setupExport();
   setupZoomControls();
+  setupFloatingPanel();
 
   updateUndoRedoButtons();
   console.log('PhotoEdit Pro 初期化完了');
@@ -195,10 +208,26 @@ function setupEventListeners() {
   // 背景削除ボタン
   document.getElementById('btn-remove-bg').addEventListener('click', removeBackground);
 
-  // ツールボタン
+  // ツールボタン（左ツールバー）
   document.querySelectorAll('.tool-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tool = btn.dataset.tool;
+      // ファイル開くボタン
+      if (tool === 'open') {
+        document.getElementById('file-input').click();
+        return;
+      }
+      // 切り抜き開始
+      if (tool === 'crop') {
+        switchPanel('transform');
+        startCrop();
+        return;
+      }
+      // テキスト追加
+      if (tool === 'text') {
+        switchPanel('text');
+        return;
+      }
       setTool(tool);
     });
   });
@@ -264,7 +293,7 @@ function setupSliders() {
       const val = parseInt(slider.value);
       valEl.textContent = val;
       State.filters[key] = val;
-      applyFilters();
+      applyFiltersDebounced();
     });
 
     // マウスアップ時に履歴保存
@@ -277,6 +306,11 @@ function setupSliders() {
 // ========================================
 // フィルター適用（Canvas APIを使用）
 // ========================================
+
+// debounce済みのフィルター適用（スライダー用: 80ms待機）
+// 高解像度画像でもスライダーがスムーズに動く
+const applyFiltersDebounced = debounce(applyFilters, 80);
+
 function applyFilters() {
   if (!State.imageObj || !State.originalImageData) return;
 
@@ -707,6 +741,8 @@ function reloadBaseImage(dataURL, callback) {
     newImg.set({ left: 0, top: 0, selectable: false, evented: false, id: 'background' });
     State.canvas.setWidth(newImg.width);
     State.canvas.setHeight(newImg.height);
+    // 透過PNG対応: 背景色を透明にする（背景削除後に白くならないように）
+    State.canvas.setBackgroundColor('', () => {});
     State.canvas.remove(State.imageObj);
     State.canvas.add(newImg);
     State.canvas.sendToBack(newImg);
@@ -1403,14 +1439,13 @@ function setTool(tool) {
     tool === 'zoom-in'  ? 'ズームイン' :
     tool === 'zoom-out' ? 'ズームアウト' : tool;
 
-  // ズームツールのクリック動作
+  // ズームツール: ボタンクリック即反映
   if (tool === 'zoom-in') {
-    document.getElementById('canvas-area').style.cursor = 'zoom-in';
-    const onZoomClick = () => changeZoom(1.25);
-    State.canvas.on('mouse:down', onZoomClick);
-    State._zoomClickHandler = onZoomClick;
+    changeZoom(1.25);
+    return;
   } else if (tool === 'zoom-out') {
-    document.getElementById('canvas-area').style.cursor = 'zoom-out';
+    changeZoom(0.8);
+    return;
   } else {
     document.getElementById('canvas-area').style.cursor = 'default';
     if (State._zoomClickHandler) {
@@ -1603,4 +1638,68 @@ function showToast(message, type = 'info') {
 // ========================================
 // アプリ起動
 // ========================================
+// ========================================
+// フローティングパネル: ドラッグ移動 & 折りたたみ
+// ========================================
+function setupFloatingPanel() {
+  const panel  = document.getElementById('properties-panel');
+  const handle = document.getElementById('panel-drag-handle');
+  const toggleBtn = document.getElementById('panel-toggle-btn');
+
+  let dragging = false;
+  let startX, startY, startRight, startTop;
+
+  // --- 折りたたみ/展開 ---
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const collapsed = panel.classList.toggle('collapsed');
+    toggleBtn.textContent = collapsed ? '＋' : '－';
+    toggleBtn.title = collapsed ? 'パネルを展開' : 'パネルを折りたたむ';
+  });
+
+  // --- ドラッグ開始 ---
+  handle.addEventListener('mousedown', (e) => {
+    if (e.target === toggleBtn) return;
+    dragging = true;
+    panel.classList.add('floating');
+
+    // 現在の位置を取得
+    const rect = panel.getBoundingClientRect();
+    startX    = e.clientX;
+    startY    = e.clientY;
+    startRight = window.innerWidth - rect.right;
+    startTop   = rect.top;
+
+    // 初回ドラッグ時: fixed + 座標を明示セット
+    panel.style.right  = startRight + 'px';
+    panel.style.top    = startTop   + 'px';
+    panel.style.bottom = 'auto';
+    panel.style.left   = 'auto';
+
+    document.body.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  // --- ドラッグ移動 ---
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    const newRight = Math.max(0, startRight - dx);
+    const newTop   = Math.max(0, startTop   + dy);
+
+    panel.style.right = newRight + 'px';
+    panel.style.top   = newTop   + 'px';
+  });
+
+  // --- ドラッグ終了 ---
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.cursor = '';
+  });
+}
+
+
 document.addEventListener('DOMContentLoaded', init);
