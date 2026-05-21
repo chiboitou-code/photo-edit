@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhotoEdit Pro - 画像編集ツール</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Fabric.js: Canvasオブジェクト操作ライブラリ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <!-- Google Fonts: 日本語対応フォント -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ========================================
+     メインレイアウト
+     ======================================== -->
+<div id="app">
+
+  <!-- ヘッダー: メニューバー -->
+  <header id="menubar">
+    <div class="menu-logo">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect width="20" height="20" rx="4" fill="#31A8FF"/>
+        <text x="4" y="15" font-size="12" font-weight="bold" fill="white" font-family="Arial">Pe</text>
+      </svg>
+      <span>PhotoEdit Pro</span>
+    </div>
+    <div class="menu-items">
+      <span class="menu-item" data-menu="file">ファイル</span>
+      <span class="menu-item" data-menu="edit">編集</span>
+      <span class="menu-item" data-menu="image">イメージ</span>
+      <span class="menu-item" data-menu="layer">レイヤー</span>
+      <span class="menu-item" data-menu="view">表示</span>
+    </div>
+    <div class="menu-actions">
+      <button id="btn-undo" class="header-btn" title="元に戻す (Ctrl+Z)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 7v6h6"/><path d="M3 13A9 9 0 1 0 5.7 5.7L3 7"/>
+        </svg>
+      </button>
+      <button id="btn-redo" class="header-btn" title="やり直し (Ctrl+Y)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 7v6h-6"/><path d="M21 13A9 9 0 1 1 18.3 5.7L21 7"/>
+        </svg>
+      </button>
+      <div class="zoom-control">
+        <button id="btn-zoom-out" class="header-btn">−</button>
+        <span id="zoom-display">100%</span>
+        <button id="btn-zoom-in" class="header-btn">＋</button>
+        <button id="btn-zoom-fit" class="header-btn" title="画面に合わせる">フィット</button>
+      </div>
+      <button id="btn-save" class="header-btn save-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </svg>
+        保存
+      </button>
+    </div>
+  </header>
+
+  <!-- メインエリア: ツールバー + キャンバス + パネル -->
+  <div id="main-area">
+
+    <!-- ========================================
+         左側ツールバー
+         ======================================== -->
+    <aside id="toolbar">
+      <div class="tool-group">
+        <!-- 選択ツール -->
+        <button class="tool-btn active" data-tool="select" title="選択 (V)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 0l16 12-7 1-4 8z"/>
+          </svg>
+        </button>
+        <!-- 切り抜きツール -->
+        <button class="tool-btn" data-tool="crop" title="切り抜き (C)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 2v14h14"/><path d="M2 6h14v14"/>
+          </svg>
+        </button>
+      </div>
+      <div class="tool-divider"></div>
+      <div class="tool-group">
+        <!-- テキストツール -->
+        <button class="tool-btn" data-tool="text" title="テキスト (T)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h8v2H4v-2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="tool-divider"></div>
+      <div class="tool-group">
+        <!-- ズームツール -->
+        <button class="tool-btn" data-tool="zoom-in" title="ズームイン (Z)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+        <button class="tool-btn" data-tool="zoom-out" title="ズームアウト">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ========================================
+         中央キャンバスエリア
+         ======================================== -->
+    <main id="canvas-area">
+      <!-- 画像未読み込み時のドロップゾーン -->
+      <div id="drop-zone">
+        <div class="drop-content">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <h2>画像をここにドロップ</h2>
+          <p>PNG / JPG / WebP 対応</p>
+          <button id="btn-upload" class="upload-btn">
+            ファイルを選択
+          </button>
+          <p class="shortcut-hint">または Ctrl+O でファイルを開く</p>
+        </div>
+      </div>
+      <!-- Fabricキャンバスのラッパー -->
+      <div id="canvas-wrapper" style="display:none;">
+        <canvas id="main-canvas"></canvas>
+      </div>
+      <!-- 切り抜きオーバーレイ -->
+      <div id="crop-overlay" style="display:none;">
+        <div id="crop-box">
+          <div class="crop-handle tl"></div>
+          <div class="crop-handle tr"></div>
+          <div class="crop-handle bl"></div>
+          <div class="crop-handle br"></div>
+        </div>
+      </div>
+      <!-- ステータスバー -->
+      <div id="status-bar" style="display:none;">
+        <span id="status-size">-</span>
+        <span id="status-zoom">100%</span>
+        <span id="status-mode">選択</span>
+      </div>
+    </main>
+
+    <!-- ========================================
+         右側プロパティパネル
+         ======================================== -->
+    <aside id="properties-panel">
+
+      <!-- タブ切り替え -->
+      <div class="panel-tabs">
+        <button class="panel-tab active" data-panel="adjustments">調整</button>
+        <button class="panel-tab" data-panel="transform">変換</button>
+        <button class="panel-tab" data-panel="text">テキスト</button>
+        <button class="panel-tab" data-panel="layers">レイヤー</button>
+        <button class="panel-tab" data-panel="export">書き出し</button>
+      </div>
+
+      <!-- ----------------------------------------
+           調整パネル
+           ---------------------------------------- -->
+      <div class="panel-content active" id="panel-adjustments">
+        <div class="panel-section">
+          <h3 class="section-title">色調補正</h3>
+
+          <!-- 明るさ -->
+          <div class="slider-row">
+            <label>明るさ</label>
+            <div class="slider-wrap">
+              <input type="range" id="sl-brightness" min="-100" max="100" value="0" class="slider">
+              <span class="slider-val" id="val-brightness">0</span>
+            </div>
+          </div>
+
+          <!-- コントラスト -->
+          <div class="slider-row">
+            <label>コントラスト</label>
+            <div class="slider-wrap">
+              <input type="range" id="sl-contrast" min="-100" max="100" value="0" class="slider">
+              <span class="slider-val" id="val-contrast">0</span>
+            </div>
+          </div>
+
+          <!-- 彩度 -->
+          <div class="slider-row">
+            <label>彩度</label>
+            <div class="slider-wrap">
+              <input type="range" id="sl-saturation" min="-100" max="100" value="0" class="slider">
+              <span class="slider-val" id="val-saturation">0</span>
+            </div>
+          </div>
+
+          <!-- 色温度 -->
+          <div class="slider-row">
+            <label>色温度</label>
+            <div class="slider-wrap">
+              <input type="range" id="sl-temperature" min="-100" max="100" value="0" class="slider">
+              <span class="slider-val" id="val-temperature">0</span>
+            </div>
+          </div>
+
+          <!-- シャープネス -->
+          <div class="slider-row">
+            <label>シャープ</label>
+            <div class="slider-wrap">
+              <input type="range" id="sl-sharpness" min="0" max="100" value="0" class="slider">
+              <span class="slider-val" id="val-sharpness">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="section-title">フィルター</h3>
+          <button id="btn-grayscale" class="filter-btn">
+            <span class="filter-icon">◑</span> モノクロ
+          </button>
+          <button id="btn-sepia" class="filter-btn">
+            <span class="filter-icon">🟤</span> セピア
+          </button>
+          <button id="btn-invert" class="filter-btn">
+            <span class="filter-icon">◐</span> 階調の反転
+          </button>
+          <button id="btn-reset-filters" class="filter-btn reset">
+            <span class="filter-icon">↺</span> フィルターをリセット
+          </button>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="section-title">背景削除 (AIローカル処理)</h3>
+          <button id="btn-remove-bg" class="action-btn bg-remove">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+            </svg>
+            背景を削除（AI）
+          </button>
+          <!-- AIモデルのロード進捗表示 -->
+          <div id="bg-remove-progress" style="display:none; margin-top:8px;">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="bg-remove-bar"></div>
+            </div>
+            <p class="panel-hint" id="bg-remove-status">AIモデルを準備中...</p>
+          </div>
+          <p class="panel-hint">
+            ✅ 登録不要・APIキー不要<br>
+            ブラウザ内でAI処理（初回のみモデルDL約40MB）
+          </p>
+        </div>
+      </div>
+
+      <!-- ----------------------------------------
+           変換パネル
+           ---------------------------------------- -->
+      <div class="panel-content" id="panel-transform">
+        <div class="panel-section">
+          <h3 class="section-title">サイズ変更</h3>
+          <div class="input-row">
+            <label>幅</label>
+            <input type="number" id="resize-width" class="text-input" placeholder="px">
+            <span>px</span>
+          </div>
+          <div class="input-row">
+            <label>高さ</label>
+            <input type="number" id="resize-height" class="text-input" placeholder="px">
+            <span>px</span>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="resize-ratio" checked>
+            <label for="resize-ratio">縦横比を固定</label>
+          </div>
+          <button id="btn-resize" class="action-btn">サイズを適用</button>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="section-title">切り抜き</h3>
+          <div class="crop-presets">
+            <button class="crop-preset-btn active" data-ratio="free">自由</button>
+            <button class="crop-preset-btn" data-ratio="1:1">1:1</button>
+            <button class="crop-preset-btn" data-ratio="4:3">4:3</button>
+            <button class="crop-preset-btn" data-ratio="16:9">16:9</button>
+            <button class="crop-preset-btn" data-ratio="circle">円形</button>
+          </div>
+          <button id="btn-start-crop" class="action-btn">切り抜き開始</button>
+          <button id="btn-apply-crop" class="action-btn apply" style="display:none;">切り抜きを適用</button>
+          <button id="btn-cancel-crop" class="action-btn cancel" style="display:none;">キャンセル</button>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="section-title">回転・反転</h3>
+          <div class="btn-group">
+            <button id="btn-rotate-left" class="small-btn" title="左90°回転">↺ 左90°</button>
+            <button id="btn-rotate-right" class="small-btn" title="右90°回転">↻ 右90°</button>
+          </div>
+          <div class="btn-group">
+            <button id="btn-flip-h" class="small-btn">↔ 水平反転</button>
+            <button id="btn-flip-v" class="small-btn">↕ 垂直反転</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ----------------------------------------
+           テキストパネル
+           ---------------------------------------- -->
+      <div class="panel-content" id="panel-text">
+        <div class="panel-section">
+          <h3 class="section-title">テキスト追加</h3>
+          <div class="input-row">
+            <label>テキスト</label>
+            <input type="text" id="text-content" class="text-input" placeholder="テキストを入力">
+          </div>
+          <div class="input-row">
+            <label>フォント</label>
+            <select id="text-font" class="select-input">
+              <option value="Noto Sans JP">Noto Sans JP</option>
+              <option value="Arial">Arial</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Impact">Impact</option>
+              <option value="Courier New">Courier New</option>
+              <option value="Times New Roman">Times New Roman</option>
+            </select>
+          </div>
+          <div class="input-row">
+            <label>サイズ</label>
+            <input type="number" id="text-size" class="text-input small" value="40" min="8" max="400">
+            <span>px</span>
+          </div>
+          <div class="input-row">
+            <label>色</label>
+            <input type="color" id="text-color" value="#ffffff" class="color-input">
+          </div>
+          <div class="input-row">
+            <label>太字</label>
+            <input type="checkbox" id="text-bold">
+            <label>斜体</label>
+            <input type="checkbox" id="text-italic">
+          </div>
+          <div class="input-row">
+            <label>縁取り色</label>
+            <input type="color" id="text-stroke-color" value="#000000" class="color-input">
+          </div>
+          <div class="input-row">
+            <label>縁取り幅</label>
+            <input type="number" id="text-stroke-width" class="text-input small" value="0" min="0" max="20">
+          </div>
+          <button id="btn-add-text" class="action-btn">テキストを追加</button>
+        </div>
+
+        <div class="panel-section" id="text-selected-section" style="display:none;">
+          <h3 class="section-title">選択中テキスト</h3>
+          <div class="input-row">
+            <label>回転</label>
+            <input type="range" id="text-rotation" min="-180" max="180" value="0" class="slider">
+            <span class="slider-val" id="val-text-rotation">0°</span>
+          </div>
+          <div class="input-row">
+            <label>透明度</label>
+            <input type="range" id="text-opacity" min="0" max="100" value="100" class="slider">
+            <span class="slider-val" id="val-text-opacity">100%</span>
+          </div>
+          <button id="btn-delete-text" class="action-btn cancel">テキストを削除</button>
+        </div>
+      </div>
+
+      <!-- ----------------------------------------
+           レイヤーパネル
+           ---------------------------------------- -->
+      <div class="panel-content" id="panel-layers">
+        <div class="panel-section">
+          <div class="layers-header">
+            <h3 class="section-title" style="margin:0;">レイヤー</h3>
+            <div class="layer-actions">
+              <button id="btn-layer-up" class="icon-btn" title="前面へ">▲</button>
+              <button id="btn-layer-down" class="icon-btn" title="背面へ">▼</button>
+              <button id="btn-layer-delete" class="icon-btn delete" title="削除">✕</button>
+            </div>
+          </div>
+          <div id="layers-list">
+            <!-- レイヤーはJSで動的生成 -->
+            <div class="layer-item active" data-layer="background">
+              <div class="layer-thumb">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                </svg>
+              </div>
+              <span class="layer-name">背景画像</span>
+              <span class="layer-type">画像</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ----------------------------------------
+           書き出しパネル
+           ---------------------------------------- -->
+      <div class="panel-content" id="panel-export">
+        <div class="panel-section">
+          <h3 class="section-title">書き出し設定</h3>
+          <div class="input-row">
+            <label>形式</label>
+            <select id="export-format" class="select-input">
+              <option value="png">PNG（透過対応）</option>
+              <option value="jpeg">JPEG</option>
+              <option value="webp">WebP</option>
+            </select>
+          </div>
+          <div class="input-row" id="jpeg-quality-row">
+            <label>品質</label>
+            <input type="range" id="export-quality" min="10" max="100" value="90" class="slider">
+            <span class="slider-val" id="val-export-quality">90%</span>
+          </div>
+          <div class="input-row">
+            <label>ファイル名</label>
+            <input type="text" id="export-filename" class="text-input" value="edited-image" placeholder="ファイル名">
+          </div>
+          <button id="btn-export" class="action-btn apply">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            画像を書き出す
+          </button>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="section-title">クイック書き出し</h3>
+          <button id="btn-save-png" class="action-btn">PNG で保存</button>
+          <button id="btn-save-jpg" class="action-btn">JPEG で保存</button>
+          <button id="btn-save-png-alpha" class="action-btn">透過PNG で保存</button>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+<!-- ========================================
+     非表示ファイル入力
+     ======================================== -->
+<input type="file" id="file-input" accept="image/png,image/jpeg,image/webp" style="display:none;">
+
+<!-- ========================================
+     ローディングオーバーレイ
+     ======================================== -->
+<div id="loading-overlay" style="display:none;">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <p id="loading-message">処理中...</p>
+  </div>
+</div>
+
+<!-- ========================================
+     トースト通知
+     ======================================== -->
+<div id="toast-container"></div>
+
+<!-- ========================================
+     ショートカットキーの説明
+     ======================================== -->
+<div id="shortcuts-modal" style="display:none;">
+  <div class="modal-bg" onclick="closeShortcuts()"></div>
+  <div class="modal-box">
+    <h2>ショートカットキー</h2>
+    <div class="shortcut-list">
+      <div class="shortcut-item"><kbd>Ctrl+O</kbd><span>ファイルを開く</span></div>
+      <div class="shortcut-item"><kbd>Ctrl+Z</kbd><span>元に戻す</span></div>
+      <div class="shortcut-item"><kbd>Ctrl+Y</kbd><span>やり直す</span></div>
+      <div class="shortcut-item"><kbd>Ctrl+S</kbd><span>PNG保存</span></div>
+      <div class="shortcut-item"><kbd>Ctrl+Shift+S</kbd><span>JPEG保存</span></div>
+      <div class="shortcut-item"><kbd>+</kbd><span>ズームイン</span></div>
+      <div class="shortcut-item"><kbd>-</kbd><span>ズームアウト</span></div>
+      <div class="shortcut-item"><kbd>0</kbd><span>100%表示</span></div>
+      <div class="shortcut-item"><kbd>Ctrl+0</kbd><span>画面に合わせる</span></div>
+      <div class="shortcut-item"><kbd>V</kbd><span>選択ツール</span></div>
+      <div class="shortcut-item"><kbd>C</kbd><span>切り抜きツール</span></div>
+      <div class="shortcut-item"><kbd>T</kbd><span>テキストツール</span></div>
+      <div class="shortcut-item"><kbd>Del</kbd><span>選択オブジェクトを削除</span></div>
+      <div class="shortcut-item"><kbd>?</kbd><span>このヘルプを表示</span></div>
+    </div>
+    <button onclick="closeShortcuts()" class="action-btn">閉じる</button>
+  </div>
+</div>
+
+<script src="editor.js"></script>
+</body>
+</html>
