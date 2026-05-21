@@ -1141,3 +1141,114 @@ html, body {
   border-radius: 3px;
   transition: width 0.3s ease;
 }
+
+/* ========================================
+   左ツールバー: ツール名ラベル
+   ======================================== */
+.tool-btn {
+  flex-direction: column;   /* アイコン＋ラベルを縦並びに */
+  gap: 3px;
+  height: 52px;             /* ラベル分高さを確保 */
+  width: 56px;              /* 横も少し広げる */
+}
+
+.tool-label {
+  font-size: 9px;
+  color: inherit;
+  line-height: 1;
+  letter-spacing: 0.3px;
+}
+
+/* ツールバー幅を広げる */
+#toolbar {
+  width: 64px;
+}
+
+/* ========================================
+   右パネル: フローティング化 & ドラッグハンドル
+   ======================================== */
+#properties-panel {
+  position: fixed;           /* 固定位置からドラッグで動かせる */
+  right: 0;
+  top: 36px;                 /* ヘッダー下から */
+  bottom: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-dark);
+  border-radius: 0;
+  box-shadow: -4px 0 16px rgba(0,0,0,0.4);
+  /* ドラッグ中の選択防止 */
+  user-select: none;
+}
+
+/* ドラッグ中はfloatingクラスで切り離す */
+#properties-panel.floating {
+  bottom: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  min-height: 48px;
+}
+
+#panel-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: #1a1a1a;
+  border-bottom: 1px solid var(--border-dark);
+  cursor: grab;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+#panel-drag-handle:active {
+  cursor: grabbing;
+}
+
+#panel-drag-handle span {
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+#panel-toggle-btn {
+  width: 18px;
+  height: 18px;
+  background: var(--bg-lighter);
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#panel-toggle-btn:hover {
+  background: var(--accent-blue);
+  color: white;
+  border-color: var(--accent-blue);
+}
+
+#panel-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 折りたたみ時 */
+#properties-panel.collapsed #panel-body,
+#properties-panel.collapsed #panel-tabs-wrap {
+  display: none;
+}
+
+#properties-panel.collapsed {
+  min-height: auto;
+}
