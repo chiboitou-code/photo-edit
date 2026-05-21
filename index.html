@@ -26,13 +26,7 @@
       </svg>
       <span>PhotoEdit Pro</span>
     </div>
-    <div class="menu-items">
-      <span class="menu-item" data-menu="file">ファイル</span>
-      <span class="menu-item" data-menu="edit">編集</span>
-      <span class="menu-item" data-menu="image">イメージ</span>
-      <span class="menu-item" data-menu="layer">レイヤー</span>
-      <span class="menu-item" data-menu="view">表示</span>
-    </div>
+
     <div class="menu-actions">
       <button id="btn-undo" class="header-btn" title="元に戻す (Ctrl+Z)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,45 +61,61 @@
          左側ツールバー
          ======================================== -->
     <aside id="toolbar">
-      <div class="tool-group">
-        <!-- 選択ツール -->
-        <button class="tool-btn active" data-tool="select" title="選択 (V)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M4 0l16 12-7 1-4 8z"/>
-          </svg>
-        </button>
-        <!-- 切り抜きツール -->
-        <button class="tool-btn" data-tool="crop" title="切り抜き (C)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 2v14h14"/><path d="M2 6h14v14"/>
-          </svg>
-        </button>
-      </div>
+
+      <!-- ファイルを開く -->
+      <button class="tool-btn" data-tool="open" title="ファイルを開く (Ctrl+O)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span class="tool-label">開く</span>
+      </button>
+
       <div class="tool-divider"></div>
-      <div class="tool-group">
-        <!-- テキストツール -->
-        <button class="tool-btn" data-tool="text" title="テキスト (T)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h8v2H4v-2z"/>
-          </svg>
-        </button>
-      </div>
+
+      <!-- 選択ツール -->
+      <button class="tool-btn active" data-tool="select" title="選択 (V)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 0l16 12-7 1-4 8z"/>
+        </svg>
+        <span class="tool-label">選択</span>
+      </button>
+
+      <!-- 切り抜きツール -->
+      <button class="tool-btn" data-tool="crop" title="切り抜き (C)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 2v14h14"/><path d="M2 6h14v14"/>
+        </svg>
+        <span class="tool-label">切抜き</span>
+      </button>
+
+      <!-- テキストツール -->
+      <button class="tool-btn" data-tool="text" title="テキスト (T)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h8v2H4v-2z"/>
+        </svg>
+        <span class="tool-label">テキスト</span>
+      </button>
+
       <div class="tool-divider"></div>
-      <div class="tool-group">
-        <!-- ズームツール -->
-        <button class="tool-btn" data-tool="zoom-in" title="ズームイン (Z)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
-          </svg>
-        </button>
-        <button class="tool-btn" data-tool="zoom-out" title="ズームアウト">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            <line x1="8" y1="11" x2="14" y2="11"/>
-          </svg>
-        </button>
-      </div>
+
+      <!-- ズームイン -->
+      <button class="tool-btn" data-tool="zoom-in" title="ズームイン (+)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+        <span class="tool-label">拡大</span>
+      </button>
+
+      <!-- ズームアウト -->
+      <button class="tool-btn" data-tool="zoom-out" title="ズームアウト (-)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+        <span class="tool-label">縮小</span>
+      </button>
+
     </aside>
 
     <!-- ========================================
@@ -149,18 +159,27 @@
     </main>
 
     <!-- ========================================
-         右側プロパティパネル
+         右側プロパティパネル（フローティング・ドラッグ移動可能）
          ======================================== -->
     <aside id="properties-panel">
 
+      <!-- ドラッグハンドル -->
+      <div id="panel-drag-handle">
+        <span>プロパティ</span>
+        <button id="panel-toggle-btn" title="パネルを折りたたむ">－</button>
+      </div>
+
       <!-- タブ切り替え -->
-      <div class="panel-tabs">
+      <div class="panel-tabs" id="panel-tabs-wrap">
         <button class="panel-tab active" data-panel="adjustments">調整</button>
         <button class="panel-tab" data-panel="transform">変換</button>
         <button class="panel-tab" data-panel="text">テキスト</button>
         <button class="panel-tab" data-panel="layers">レイヤー</button>
         <button class="panel-tab" data-panel="export">書き出し</button>
       </div>
+
+      <!-- パネル本体（折りたたみ対象） -->
+      <div id="panel-body">
 
       <!-- ----------------------------------------
            調整パネル
